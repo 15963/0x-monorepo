@@ -3,6 +3,7 @@ import { prependSubprovider } from '@0xproject/subproviders';
 import { Web3Wrapper } from '@0xproject/web3-wrapper';
 
 import { coverage } from './coverage';
+import { profiler } from './profiler';
 
 enum ProviderType {
     Ganache = 'ganache',
@@ -45,9 +46,19 @@ const providerConfigs = testProvider === ProviderType.Ganache ? ganacheConfigs :
 
 export const provider = web3Factory.getRpcProvider(providerConfigs);
 const isCoverageEnabled = env.parseBoolean(EnvVars.SolidityCoverage);
+const isProfilerEnabled = env.parseBoolean(EnvVars.SolidityProfiler);
+if (isCoverageEnabled && isProfilerEnabled) {
+    throw new Error(
+        `Unfortunately for now you can't enable both coverage and profiler at the same time. They both use coverage.json file and there is no way to configure that.`,
+    );
+}
 if (isCoverageEnabled) {
     const coverageSubprovider = coverage.getCoverageSubproviderSingleton();
     prependSubprovider(provider, coverageSubprovider);
+}
+if (isProfilerEnabled) {
+    const profilerSubprovider = profiler.getProfilerSubproviderSingleton();
+    prependSubprovider(provider, profilerSubprovider);
 }
 
 export const web3Wrapper = new Web3Wrapper(provider);
